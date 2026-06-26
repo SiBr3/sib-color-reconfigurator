@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="appTitle">SiBr3's Color Configurator</title>
+	<link rel="icon" type="image/png" href="assets/icons/sib-cc-logo.png">
+	<link rel="stylesheet" href="ui/sib-cc-app-styles.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+</head>
+<body>
+<div class="container" id="appContainer">
+
+    <div class="header">
+        <div style="width:190px"></div>
+        <div class="header-text">
+            <!-- <h1 id="appTitle">&#127912; SiBr3's Color Configurator</h1> -->
+			<p><img src="assets/misc/sib-cc-banner_re.gif" style="max-width: 512px;"></p>
+            <p id="appSubtitle">Edit and create new color definitions and customize leader jersey colors</p>
+        </div>
+        <div class="header-controls">
+			<img src="assets/icons/sib-cc-language.png" style="width: 32px; height: 32px;">
+			<div class="custom-dropdown" id="langDropdown">
+				<div class="dropdown-selected" id="langSelected">
+					<span id="langText">English</span>
+				</div>
+				<ul class="dropdown-options" id="langOptions">
+					<li data-lang="en" class="active">English</li>
+					<li data-lang="de">Deutsch</li>
+					<li data-lang="es">Español</li>
+					<li data-lang="fr">Français</li>
+					<li data-lang="it">Italiano</li>
+					<li data-lang="pl">Polski</li>
+					<li data-lang="pt_BR">Português (BR)</li>
+					<li data-lang="ru">Русский</li>
+					<li data-lang="ko">한국어</li>
+					<li data-lang="ja">日本語</li>
+					<li data-lang="zh_Hans">中文 (简体)</li>
+					<li data-lang="zh_Hant">中文 (繁體)</li>
+				</ul>
+			</div>
+            <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+				<img src="assets/icons/sib-cc-eye-light.png" style="width: 32px; vertical-align: middle;">
+			</button>
+        </div>
+    </div>
+
+
+    <div id="sessionBanner">
+        <span class="banner-icon"></span>
+        <span class="banner-text"></span>
+        <button class="btn btn-neutral btn-banner" id="bannerLoadBtn" style="display:none" data-action="loadConfig">&#128193; <span id="bannerLoadBtnLabel"></span></button>
+        <button class="btn-dismiss" id="btnBannerDismiss" title="Dismiss">&#215;</button>
+    </div>
+
+    <div id="notificationTray"></div>
+
+    <div class="tabs" id="tabContainer">
+        <button class="tab-btn active" data-tab="colors" id="tabBtnColors">
+            <img src="assets/icons/sib-cc-colors.png" style="width: 32px; height: 32px;"> 
+            <span id="txtTabColors">Color Definitions</span>
+        </button>
+        <button class="tab-btn active" data-tab="leaders" id="tabBtnLeaders">
+            <img src="assets/icons/sib-cc-crayons.png" style="width: 32px; height: 32px;"> 
+            <span id="txtTabLeaders">Leader Jerseys</span>
+        </button>
+    </div>
+
+    <div id="tab-colors" class="tab-panel active">
+        <fieldset class="fieldset">
+		<legend id="tabUtilitiesC">Utilities</legend>
+			<div class="actions" style="display: flex; gap: 8px;">
+				<button class="btn btn-primary"   data-action="exportWorkshopZip">&#9889; Export Mod Package</button>
+				<button class="btn btn-primary"   data-action="exportSql">&#9889; Export Update Package</button>
+				<button class="btn btn-neutral"   data-action="loadExternalMod">&#128193; Import Mod (SQL/XML)</button>
+				<button class="btn btn-neutral"   data-action="loadConfig">&#128193; Import Config</button>
+				<button class="btn btn-neutral"   data-action="exportConfig">&#128191; Export Config Only</button>
+				<button class="btn btn-danger"    data-action="resetColors">&#8635; Reset Color Definitions</button>
+			</div>
+		</fieldset>
+        <div class="colors-table-container" id="colorsTableContainer">
+            <table class="data-table" id="colorsTable"></table>
+        </div>
+    </div>
+
+    <div id="tab-leaders" class="tab-panel">
+		<fieldset class="fieldset">
+		<legend id="tabUtilitiesL">Utilities</legend>	
+			<div class="actions" style="display: flex; gap: 8px;">
+				<button class="btn btn-primary"   data-action="exportWorkshopZip">&#9889; Export Mod Package</button>
+				<button class="btn btn-primary"   data-action="exportSql">&#9889; Export Update Package</button>
+				<button class="btn btn-neutral"   data-action="loadExternalMod">&#128193; Import Mod (SQL/XML)</button>
+				<button class="btn btn-neutral"   data-action="loadConfig">&#128193; Import Config</button>
+				<button class="btn btn-neutral"   data-action="exportConfig">&#128191; Export Config Only</button>
+				<button class="btn btn-secondary" id="btnBulkAuto" data-action="bulkAuto">
+					<img src="assets/icons/sib-cc-wizard.png" style="width: 20px; height: 20px;"> 
+				<span id="txtBtnBulkAuto">Auto-Generate All Colors</span>
+				</button>
+				<button class="btn btn-danger" data-action="resetLeaders"></button>
+			</div>
+		</fieldset>
+        <div class="leaders-table-container" id="leadersTableContainer">
+            <table class="data-table" id="leadersTable"></table>
+        </div>
+    </div>
+
+    <div class="footer">
+		<p><img src="assets/icons/sib-cc-about.png" style="max-width: 24px;"></p>
+		<div class="visitor-counter">
+		    <span id="visitorCount">—</span> visitors
+		</div>
+        <p id="footerCredit"></p>
+        <p id="footerNote" style="margin-top:6px; color:var(--text-faint);"></p>
+    </div>
+</div>
+
+<input type="file" id="fileInput" accept=".json" style="display:none">
+<input type="file" id="modFileInput" accept=".sql,.xml" style="display:none">
+
+<div class="modal" id="exportWorkshopModal">
+    <div class="modal-content" style="max-width: 550px; width: 90%;">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="exportWorkshopModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-exportcolor.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-generic.png'">
+                <span id="titleExportWorkshop">Export Workshop Mod</span>
+            </div>
+        </div>
+        
+        <div class="modal-body" style="padding: 20px;">
+            <p style="margin-top: 0; margin-bottom: 15px; font-size: 13px;" id="exportWorkshopModalBodyDescription_top"></p>
+						<span class="copy-dir-path" style="width: full" id="exportWorkshopModalBodyDescription_path"></span>
+						<p style="margin-top: 15px; margin-bottom: 15px; font-size: 13px;" id="exportWorkshopModalBodyDescription_bottom"></p>
+            
+            <fieldset class="fieldset" style="margin-bottom: 20px;">
+                <legend id="exportWorkshopModalBodyModDetails">Mod Details</legend>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 12px;" id="exportWorkshopModalBodyModDetails_name">Mod Name</label>
+                    <input type="text" id="exportModName" class="modal-text-input" value="SiBr3's Custom Colors" style="width: 100%; box-sizing: border-box; height: 32px;">
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 12px;" id="exportWorkshopModalBodyModDetails_id">Mod ID</label>
+                    <input type="text" id="exportModId" class="modal-text-input" value="sibr3s-custom-colors" style="width: 100%; box-sizing: border-box; height: 32px;">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;"id="exportWorkshopModalBodyModDetails_id_subtitle"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 12px;" id="exportWorkshopModalBodyModDetails_author">Author</label>
+                        <input type="text" id="exportModAuthor" class="modal-text-input" value="SiBr3" style="width: 100%; box-sizing: border-box; height: 32px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 12px;" id="exportWorkshopModalBodyModDetails_version">Version</label>
+                        <input type="text" id="exportModVersion" class="modal-text-input" value="1" style="width: 100%; box-sizing: border-box; height: 32px;">
+												<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;"id="exportWorkshopModalBodyModDetails_version_subtitle"></div>
+										</div>
+                </div>
+								
+								                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 12px;">Description</label>
+                    <textarea id="exportModDesc" class="modal-text-input" style="width: 100%; box-sizing: border-box; padding: 8px; height: 75px; resize: vertical; font-family: inherit; font-size: 13px;">Custom leader jersey colors generated via SiBr3's Color Configurator tool.</textarea>
+                </div>
+								
+            </fieldset>
+                <!-- <div style="padding: 10px 12px; background: var(--bg-surface); border: 1px solid var(--border); box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" id="exportAutoTranslate" checked style="margin-right: 8px;">
+                        <strong>Auto-Translate Mod Details via AI</strong>
+                    </label>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; margin-left: 21px;">
+                        Automatically generates localized XML files for all 12 supported languages.
+                    </div>
+                </div> -->
+        </div>
+        
+        <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-container);">
+            <button class="btn btn-neutral" id="btnCancelWorkshopExport" data-modal-close="exportWorkshopModal">Cancel</button>
+            <button class="btn btn-primary" id="btnConfirmWorkshopExport">Package & Download</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="advancedImportModal">
+    <div class="modal-content" style="max-width: 800px; width: 90%;">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="advancedImportModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-steam.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-generic.png'">
+                <span id="advancedImportModal_title">Import Color Mod Data</span>
+            </div>
+        </div>
+        
+        <div class="modal-body" style="padding: 20px;">
+            <fieldset class="fieldset" style="margin-bottom: 20px;">
+                <legend id="advancedImportModal_source">Source Files</legend>
+                <p id="advancedImportModal_selection" style="margin-top: 0; margin-bottom: 12px; font-size: 13px;"></p>
+                <input type="file" id="advancedImportFileInput" multiple accept=".sql,.xml" style="width: 100%;">
+            </fieldset>
+
+            <div id="importStagingArea" style="display: none;">
+                <fieldset class="fieldset" style="margin-bottom: 20px;">
+                    <legend id="advancedImportModal_strategy">Import Strategy</legend>
+                    <label style="display: block; margin-bottom: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="radio" name="importMode" value="merge" checked style="margin-right: 6px; vertical-align: middle;"> 
+                        <span  id="advancedImportModal_merge_head" style="font-weight: bold">Merge:</span> <span id="advancedImportModal_merge_body">Update existing colors/leaders and add new ones.</span>
+                    </label>
+                    <label style="display: block; cursor: pointer; font-size: 13px;">
+                        <input type="radio" name="importMode" value="replace" style="margin-right: 6px; vertical-align: middle;"> 
+                        <span  id="advancedImportModal_replace_head" style="font-weight: bold">Replace:</span> <span id="advancedImportModal_replace_body">Wipe current custom colors and reset all leaders before importing.</span>
+                    </label>
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend>Review Parsed Data</legend>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px;">
+                                <h3 style="margin: 0; font-size: 14px;">Parsed Colors (<span id="stagingColorCount">0</span>)</h3>
+                                <label style="font-size: 13px; cursor: pointer;"><input type="checkbox" id="masterStagingColorsCb" checked style="vertical-align: middle;"> Select All</label>
+                            </div>
+                            <div id="importStagingColors" style="max-height: 280px; overflow-y: auto; padding-right: 5px;"></div>
+                        </div>
+
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px;">
+                                <h3 style="margin: 0; font-size: 14px;">Parsed Leaders (<span id="stagingLeaderCount">0</span>)</h3>
+                                <label style="font-size: 13px; cursor: pointer;"><input type="checkbox" id="masterStagingLeadersCb" checked style="vertical-align: middle;"> Select All</label>
+                            </div>
+                            <div id="importStagingLeaders" style="max-height: 280px; overflow-y: auto; padding-right: 5px;"></div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        
+        <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-container);">
+            <div id="importDependencyWarning" style="color: #e53e3e; font-size: 13px; font-weight: bold; flex: 1; margin-right: 15px;"></div>
+            <div style="flex-shrink: 0; display: flex; gap: 12px;">
+                <button class="btn btn-neutral" id="btnCancelAdvancedImport" data-modal-close="advancedImportModal">Cancel</button>
+                <button class="btn btn-primary" id="btnConfirmAdvancedImport" disabled>Import Selected</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="colorPickerModal" class="modal color-picker-modal">
+    <div class="modal-content">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="colorPickerModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-eyedropper.png" class="modal-title-icon" alt="">
+                <span id="colorPickerTitle">Select Color</span>
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 0; display: flex; flex-direction: column;">
+            
+            <div style="padding: 16px 20px; border-bottom: 2px solid var(--border); background: var(--bg-container); z-index: 10;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <div style="font-weight: 600; font-size: 12px; color: var(--text-primary);" id="quickColorModeLabel">Quick Add Color</div>
+                    <span id="quickColorAddStatus" class="sql-copy-status" style="margin-left: 0;"></span>
+                </div>
+                
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input class="modal-text-input" type="text" id="quickColorName" placeholder="Color Name" style="width:50%">
+                    <input class="modal-text-input" type="text" id="quickColorHex" placeholder="#RRGGBB" maxlength="7">
+                    <input class="color-picker-swatch" type="color" id="quickColorPicker" value="#808080" style="height: 32px" title="Click to pick color">
+                    <button class="btn btn-primary" id="quickColorBtn" data-action="quickColorApply">+ Add</button>
+                    <button class="btn btn-neutral" id="quickColorCancelBtn" data-action="quickColorCancel">Cancel</button>
+                </div>
+                
+                <input type="hidden" id="quickColorEditMode" value="add">
+                <input type="hidden" id="quickColorEditId" value="">
+                <input type="hidden" id="quickColorIsCustom" value="false">
+            </div>
+
+            <div style="padding: 16px 20px; overflow-y: auto; flex-grow: 1; min-height: 0;">
+                <div class="color-picker-grid" id="colorPickerGrid"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="autoGenModal" class="modal">
+    <div class="modal-content auto-gen-modal-content">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="autoGenModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-wizard.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-warning.png'">
+                <span id="autoGenModalTitle">Auto-Generate Colors</span>
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 20px;">
+            <div id="autoGenMethodButtons" class="auto-gen-methods"></div>
+        </div>
+        
+    </div>
+</div>
+
+<div id="customRandomPoolModal" class="modal">
+    <div class="modal-content custom-pool-modal-content">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="customRandomPoolModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-die.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-generic.png'">
+                <span id="customRandomPoolTitle"></span>
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 20px;">
+            <p id="customPoolDesc" style="color:var(--text-primary); margin-bottom:16px; font-size:13px; line-height: 1.4;"></p>
+            <div id="customRandomPoolGrid" class="custom-pool-grid"></div>
+        </div>
+        
+        <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-container);">
+            <button class="btn btn-secondary" id="btnClearCustomPool" data-action="clearCustomPool"></button>
+            <button class="btn btn-primary" id="applyCustomPoolBtn" data-action="applyCustomPool"></button>
+        </div>
+        
+    </div>
+</div>
+
+<div id="bulkAutoModal" class="modal">
+    <div class="modal-content auto-gen-modal-content">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="bulkAutoModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-wizard.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-generic.png'">
+                <span id="bulkAutoModalTitle"></span>
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 20px;">
+            <p id="bulkAutoDesc" style="color:var(--text-primary); margin-bottom:16px; font-size: 13px; line-height: 1.4;"></p>
+            <div id="bulkAutoMethodButtons" class="auto-gen-methods"></div>
+        </div>
+        
+    </div>
+</div>
+
+<div id="genericPastebinModal" class="modal sql-pastebin-modal">
+    <div class="modal-content">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="genericPastebinModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-sql.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-generic.png'">
+                <span id="genericPastebinTitle">Output</span>
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 16px;">
+            
+            <div class="sql-pastebin-toolbar">
+                <button class="btn btn-primary" id="btnGenericPastebinCopy">
+                    <img src="assets/icons/sib-cc-copy.png" style="width: 20px; height: 20px; margin-right: 6px;">
+                    <span id="genericCopyBtnLabel">Copy to Clipboard</span>
+                </button>
+                <span id="genericCopyStatus" class="sql-copy-status">✓</span>
+                <span style="flex:1"></span>
+                <button class="btn btn-neutral" id="btnGenericPastebinDownload">
+                    <img src="assets/icons/sib-cc-download.png" style="width: 20px; height: 20px;">
+                </button>
+            </div>
+            
+            <div class="sql-pastebin-wrap">
+                <div class="sql-pastebin-code">
+                    <div class="sql-line-numbers" id="genericLineNumbers"></div>
+                    <div class="sql-code-body" id="genericCodeBody"></div>
+                </div>
+            </div>
+            
+            <div class="sql-pastebin-footer" id="genericPastebinFooter" style="white-space: pre-line;"></div>
+            
+        </div>
+        
+    </div>
+</div>
+
+<div id="confirmModal" class="modal">
+    <div class="modal-content modal-alert" style="max-width: 400px; text-align: left;">
+        
+        <div class="modal-titlebar">
+        </div>
+
+        <div class="modal-body" style="padding: 24px;">
+            
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <img src="assets/icons/sib-cc-warning.png" style="width: 32px; height: 32px; flex-shrink: 0;">
+                <p id="confirmModalText" style="margin: 0; white-space: pre-line; font-size: 14px; line-height: 1.5;"></p>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn btn-neutral" data-modal-close="confirmModal" id="btnConfirmCancel" style="flex: 1;">Cancel</button>
+                <button class="btn btn-danger" id="btnConfirmYes" style="flex: 1;">Confirm</button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div id="portraitPopup"><img id="portraitPopupImg" src="" alt=""></div>
+
+<div id="trioModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="trioModal"></button>
+            
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-eyedropper.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-generic.png'">
+                <span id="trioModalTitle">Generate Color Trio</span>
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 20px;">
+            
+            <div style="display:flex; gap:12px; margin-bottom: 20px;">
+                <div style="flex:2">
+                    <label id="lblTrioBaseName" style="display:block; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Base Name</label>
+                    <input type="text" id="trioBaseName" placeholder="Base Name" class="modal-text-input" style="width:100%; height:32px;">
+                </div>
+                <div style="flex:1">
+                    <label id="lblTrioBaseHex" style="display:block; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Base Hex</label>
+                    <div style="display:flex; gap:4px;">
+                        <input type="color" id="trioBaseColor" value="#004fce" style="width:32px; height:32px; border:1px solid var(--border); border-radius:0; cursor:pointer; background:#808080; padding:0; box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);">
+                        <input type="text" id="trioBaseHex" value="#004FCE" maxlength="7" class="modal-text-input" style="width:80%;">
+                    </div>
+                </div>
+            </div>
+            
+			<fieldset class="fieldset">
+			<legend id="lblTrioBasePos"></legend>
+				<!-- <label id="lblTrioBasePos" style="display:block; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Base Position</label> -->
+				<div style="display:flex; gap:8px; margin-bottom: 24px;">
+					<label class="btn-trio-base" id="lblBoxTrioLT">
+						<input type="radio" name="trioPos" value="LT" style="display:none;" data-action="updateTrioCalc"> <span id="txtTrioPosLT">Light</span>
+					</label>
+					<label class="btn-trio-base" id="lblBoxTrioMD">
+						<input type="radio" name="trioPos" value="MD" checked style="display:none;" data-action="updateTrioCalc"> <span id="txtTrioPosMD">Medium</span>
+					</label>
+					<label class="btn-trio-base" id="lblBoxTrioDK">
+						<input type="radio" name="trioPos" value="DK" style="display:none;" data-action="updateTrioCalc"> <span id="txtTrioPosDK">Dark</span>
+					</label>
+				</div>
+			</fieldset>
+
+            <fieldset class="fieldset">
+				<legend id="lblTrioGen"></legend>
+                <!-- <label id="lblTrioGen" style="display:block; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:12px;">Generated Trio (Fine-tune luminosity)</label> -->
+                
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; background:var(--bg-surface); padding:8px; border:1px solid var(--border); box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);">
+                    <span id="txtTrioRowLT" style="width:50px; font-size:12px; font-weight:bold; color:var(--text-muted);">Light</span>
+                    <div id="trioSwatchLT" style="width:32px; height:32px; border:1px solid var(--border); background:#ffffff; box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);"></div>
+                    <input type="range" id="trioSliderLT" min="0" max="100" value="90" data-action="slideTrio" data-target="LT" style="flex:1; cursor:pointer;">
+                    <span id="trioHexOutLT" style="width:65px; font-family: inherit; font-size:12px; color:var(--text-primary); text-align:right;">#FFFFFF</span>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; background:var(--bg-surface); padding:8px; border:1px solid var(--border); box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);">
+                    <span id="txtTrioRowMD" style="width:50px; font-size:12px; font-weight:bold; color:var(--text-muted);">Medium</span>
+                    <div id="trioSwatchMD" style="width:32px; height:32px; border:1px solid var(--border); background:#808080; box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);"></div>
+                    <input type="range" id="trioSliderMD" min="0" max="100" value="50" data-action="slideTrio" data-target="MD" style="flex:1; cursor:pointer;">
+                    <span id="trioHexOutMD" style="width:65px; font-family: inherit; font-size:12px; color:var(--text-primary); text-align:right;">#808080</span>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:12px; background:var(--bg-surface); padding:8px; border:1px solid var(--border); box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);">
+                    <span id="txtTrioRowDK" style="width:50px; font-size:12px; font-weight:bold; color:var(--text-muted);">Dark</span>
+                    <div id="trioSwatchDK" style="width:32px; height:32px; border:1px solid var(--border); background:#000000; box-shadow: inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);"></div>
+                    <input type="range" id="trioSliderDK" min="0" max="100" value="10" data-action="slideTrio" data-target="DK" style="flex:1; cursor:pointer;">
+                    <span id="trioHexOutDK" style="width:65px; font-family: inherit; font-size:12px; color:var(--text-primary); text-align:right;">#000000</span>
+                </div>
+            </fieldset>
+            
+        </div>
+        
+        <div class="modal-footer" style="padding:16px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; background: var(--bg-container);">
+            <button class="btn btn-primary" id="btnSaveTrio" data-action="saveColorTrio">Save Trio</button>
+        </div>
+        
+    </div>
+</div>
+
+<div id="loadingModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        
+        <div class="modal-titlebar">
+            <button class="modal-close-box" id="btnLoadingModalClose"></button>
+            
+            <div class="modal-title-content">
+                <img id="loadIcon" src="assets/icons/sib-cc-warning.png" class="modal-title-icon" alt="" onerror="this.src='assets/icons/sib-cc-generic.png'">
+                <span id="loadTitle"></span>
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 20px;">
+            <div style="display: grid; place-items: center; gap: 16px; margin-bottom: 24px;">
+				<div id="loadSubtext" style="font-size: 12px; font-weight: bold; margin-bottom: 12px; height: 16px;">
+					Preparing...
+				</div>
+				<div class="progress-track">
+					<div id="progressBar" class="progress-fill"></div>
+				</div>
+				<div style="display: flex; gap: 12px; justify-content: center;">
+					<button class="btn btn-neutral" id="btnLoadingModalCancel" style="flex: 1;">Cancel</button>
+				</div>
+			</div>
+		</div>
+    </div>   
+</div>
+
+
+<div id="eyedropperTool" class="eyedropper-tool" title="">
+    <div class="eyedropper-swatch" id="eyedropperSwatch"></div>
+    <div class="eyedropper-label" id="eyedropperLabel" style="white-space: pre-line;"></div>
+    <div class="btn btn-primary eyedropper-btn" id="eyedropperBtn" data-action="toggleEyedropper">
+        <span class="eyedropper-icon">
+            <p><img src="assets/icons/sib-cc-eyedropper.png" style="max-width: 24px;"></p>
+        </span>
+    </div>
+</div>
+
+			
+<script src="text/sib-cc-app-strings.js"></script>
+<script src="text/sib-cc-app-locale.js"></script>
+<script src="ui/sib-cc-app-scripts.js"></script>
+<img id="theaterWatchCursor" src="assets/cursors/sib-cc-watch.gif" alt="">
+</body>
+</html>

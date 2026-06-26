@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\Kearns\\\\AppData\\\\Local\\\\Firaxis Games\\\\Sid Meier's Civilization VII\\\\Debug\\\\\" 2>/dev/null | head -20)",
+      "PowerShell(& \"C:\\\\Windows\\\\System32\\\\sqlite3.exe\" \"C:\\\\Users\\\\Kearns\\\\AppData\\\\Local\\\\Firaxis Games\\\\Sid Meier's Civilization VII\\\\Debug\\\\colors-copy.sqlite\" \".tables\" 2>&1)",
+      "PowerShell(Get-Command sqlite3 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Kearns\\\\AppData\\\\Local\\\\Firaxis Games\\\\Sid Meier's Civilization VII\\\\Mods\\\\sib-color-configurator-color-importerator\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object -First 40 FullName)",
+      "PowerShell(Get-Command node -ErrorAction SilentlyContinue)",
+      "PowerShell(node --version 2>&1)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\Kearns\\\\AppData\\\\Local\\\\Firaxis Games\\\\Sid Meier's Civilization VII\\\\Mods\\\\sib-color-configurator-color-importerator\\\\text\\\\sib-cc-app-locale.js\" | Measure-Object -Line\\).Lines)"
+    ]
+  }
+}
