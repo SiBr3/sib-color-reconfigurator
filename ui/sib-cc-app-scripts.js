@@ -2616,6 +2616,19 @@ const WorkshopExport = {
             }
         });
 
+        // Replace dangling color references (e.g. from a third-party mod's PlayerColors contaminating localStorage)
+        let _cleaned = false;
+        Config.DEFAULT_LEADERS.forEach(l => {
+            const sel = State.leaderSelections[l.type];
+            if (!sel) return;
+            const defs = { primary: l.defaultPrimary, secondary: l.defaultSecondary, alt1Primary: l.defaultAlt1P, alt1Secondary: l.defaultAlt1S, alt2Primary: l.defaultAlt2P, alt2Secondary: l.defaultAlt2S, alt3Primary: l.defaultAlt3P, alt3Secondary: l.defaultAlt3S };
+            Object.entries(defs).forEach(([k, def]) => {
+                const v = sel[k];
+                if (v && !State.colorDefs[v] && !State.customColors.some(c => c.id === v)) { sel[k] = def; _cleaned = true; }
+            });
+        });
+        if (_cleaned) persist();
+
         document.getElementById('themeToggle').addEventListener('click', () => {
             const isDark = document.documentElement.hasAttribute('data-dark');
             if(isDark) { document.documentElement.removeAttribute('data-dark'); document.getElementById('themeToggle').innerHTML = `<img src="assets/icons/sib-cc-eye-dark.png" style="width: 32px; vertical-align: middle;">`; }
