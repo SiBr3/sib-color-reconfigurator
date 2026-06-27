@@ -2581,6 +2581,80 @@ const WorkshopExport = {
     };
 
     // ═══════════════════════════════════════════════════════════════
+    // DEV MODE
+    // ═══════════════════════════════════════════════════════════════
+    const DevMode = {
+        _pat: null,
+        _activeSubTab: 'addColor',
+
+        init() {
+            const stored = sessionStorage.getItem('sib-dev-pat');
+            if (stored) { this._pat = stored; this._unlock(); }
+            else { this._showGate(); }
+        },
+
+        _showGate() {
+            UI.openModal('devGateModal');
+            document.getElementById('btnDevPatSubmit').onclick = () => this._submit();
+            document.getElementById('devPatInput').onkeydown = e => { if (e.key === 'Enter') this._submit(); };
+        },
+
+        async _submit() {
+            const pat = document.getElementById('devPatInput').value.trim();
+            const errEl = document.getElementById('devPatError');
+            errEl.style.display = 'none';
+            if (!pat) { errEl.textContent = 'Enter a token first.'; errEl.style.display = 'block'; return; }
+            const btn = document.getElementById('btnDevPatSubmit');
+            btn.disabled = true; btn.textContent = 'Validating…';
+            try {
+                const r = await fetch('https://api.github.com/user', { headers: { Authorization: `token ${pat}` } });
+                if (r.ok) {
+                    sessionStorage.setItem('sib-dev-pat', pat);
+                    this._pat = pat;
+                    UI.closeModal('devGateModal');
+                    this._unlock();
+                } else {
+                    errEl.textContent = r.status === 401 ? 'Invalid or expired token.' : `GitHub returned ${r.status}.`;
+                    errEl.style.display = 'block';
+                }
+            } catch (e) {
+                errEl.textContent = 'Network error — check your connection.';
+                errEl.style.display = 'block';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Unlock';
+            }
+        },
+
+        _unlock() {
+            document.getElementById('tabBtnDev').style.display = '';
+            document.getElementById('btnDevLogout').onclick = () => this._logout();
+            document.getElementById('tab-dev').addEventListener('click', e => {
+                const btn = e.target.closest('[data-dev-tab]');
+                if (btn) this.switchSubTab(btn.dataset.devTab);
+            });
+            this.switchSubTab(this._activeSubTab);
+            Events.switchTab('dev');
+        },
+
+        switchSubTab(name) {
+            this._activeSubTab = name;
+            document.querySelectorAll('.dev-sub-tab').forEach(b => b.classList.toggle('active', b.dataset.devTab === name));
+            document.querySelectorAll('.dev-panel').forEach(p => p.classList.remove('active'));
+            const panel = document.getElementById(`dev-panel-${name}`);
+            if (panel) panel.classList.add('active');
+        },
+
+        _logout() {
+            sessionStorage.removeItem('sib-dev-pat');
+            this._pat = null;
+            document.getElementById('tabBtnDev').style.display = 'none';
+            Events.switchTab('colors');
+        },
+
+        get pat() { return this._pat; }
+    };
+
+    // ═══════════════════════════════════════════════════════════════
     // EXPOSED GLOBAL INIT
     // ═══════════════════════════════════════════════════════════════
     async function init() {
@@ -2832,6 +2906,8 @@ const WorkshopExport = {
         Events.init();
         UI.applyStrings();
         Events.switchTab('leaders');
+
+		if (new URLSearchParams(window.location.search).has('dev')) DevMode.init();
 
 		// Migration utility — open with ?migrate=1 to generate sib-content.sqlite from bundled JS data
 		if (new URLSearchParams(window.location.search).has('migrate')) {

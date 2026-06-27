@@ -505,6 +505,11 @@
         .tab-panel { display: none; padding: 24px 30px; }
         .tab-panel.active { display: block;}
 
+        .dev-panel { display: none; }
+        .dev-panel.active { display: block; }
+        .dev-sub-tab { opacity: 0.6; }
+        .dev-sub-tab.active { opacity: 1; box-shadow: inset 0 0 0 2px var(--accent); }
+
         /* ── Buttons ──────────────────────────────────────────────── */
         .actions {
             display: flex;

@@ -62,8 +62,12 @@
             <span id="txtTabColors">Color Definitions</span>
         </button>
         <button class="tab-btn active" data-tab="leaders" id="tabBtnLeaders">
-            <img src="assets/icons/sib-cc-crayons.png" style="width: 32px; height: 32px;"> 
+            <img src="assets/icons/sib-cc-crayons.png" style="width: 32px; height: 32px;">
             <span id="txtTabLeaders">Leader Jerseys</span>
+        </button>
+        <button class="tab-btn" data-tab="dev" id="tabBtnDev" style="display:none">
+            <img src="assets/icons/sib-cc-edit.png" style="width: 32px; height: 32px;">
+            <span id="txtTabDev">Dev Tools</span>
         </button>
     </div>
 
@@ -103,6 +107,19 @@
         <div class="leaders-table-container" id="leadersTableContainer">
             <table class="data-table" id="leadersTable"></table>
         </div>
+    </div>
+
+    <div id="tab-dev" class="tab-panel">
+        <div style="display:flex; gap:6px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); align-items:center;">
+            <button class="btn btn-neutral dev-sub-tab active" data-dev-tab="addColor">+ Color</button>
+            <button class="btn btn-neutral dev-sub-tab" data-dev-tab="addLeader">+ Leader</button>
+            <button class="btn btn-neutral dev-sub-tab" data-dev-tab="commit">&#128190; Commit</button>
+            <span style="flex:1"></span>
+            <button class="btn btn-danger" id="btnDevLogout">Log Out</button>
+        </div>
+        <div id="dev-panel-addColor" class="dev-panel active"></div>
+        <div id="dev-panel-addLeader" class="dev-panel"></div>
+        <div id="dev-panel-commit" class="dev-panel"></div>
     </div>
 
     <div class="footer">
@@ -539,6 +556,27 @@
 </div>
 
 			
+<div id="devGateModal" class="modal">
+    <div class="modal-content" style="max-width:420px; width:90%;">
+        <div class="modal-titlebar">
+            <button class="modal-close-box" data-modal-close="devGateModal"></button>
+            <div class="modal-title-content">
+                <img src="assets/icons/sib-cc-about.png" class="modal-title-icon" alt="">
+                <span>Developer Access</span>
+            </div>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+            <p style="margin:0 0 12px; font-size:13px; line-height:1.5;">Enter a GitHub Personal Access Token with <strong>contents:write</strong> permission on the <code>sib-color-reconfigurator</code> repo.</p>
+            <input type="password" id="devPatInput" class="modal-text-input" placeholder="ghp_..." style="width:100%; height:32px; box-sizing:border-box;">
+            <p id="devPatError" style="color:#e53e3e; font-size:12px; margin:8px 0 0; display:none;"></p>
+        </div>
+        <div class="modal-footer" style="padding:16px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:var(--bg-container);">
+            <button class="btn btn-neutral" data-modal-close="devGateModal">Cancel</button>
+            <button class="btn btn-primary" id="btnDevPatSubmit">Unlock</button>
+        </div>
+    </div>
+</div>
+
 <script src="text/sib-cc-app-strings.js"></script>
 <script src="text/sib-cc-app-locale.js"></script>
 <script src="ui/sib-cc-app-scripts.js"></script>
