@@ -2632,6 +2632,7 @@ const WorkshopExport = {
                 const btn = e.target.closest('[data-dev-tab]');
                 if (btn) this.switchSubTab(btn.dataset.devTab);
             });
+            this.renderAddColor();
             this.switchSubTab(this._activeSubTab);
             Events.switchTab('dev');
         },
@@ -2649,6 +2650,105 @@ const WorkshopExport = {
             this._pat = null;
             document.getElementById('tabBtnDev').style.display = 'none';
             Events.switchTab('colors');
+        },
+
+        // ── Add Color ────────────────────────────────────────────────
+
+        _LANG_LABELS: { en:'English', de:'Deutsch', es:'Español', fr:'Français', it:'Italiano', pl:'Polski', pt_BR:'Português (BR)', ru:'Русский', ko:'한국어', ja:'日本語', zh_Hans:'中文 (简体)', zh_Hant:'中文 (繁體)' },
+
+        _WORKER_LOCALE_MAP: { 'en_US':'en', 'de_DE':'de', 'es_ES':'es', 'fr_FR':'fr', 'it_IT':'it', 'pl_PL':'pl', 'pt_BR':'pt_BR', 'ru_RU':'ru', 'ko_KR':'ko', 'ja_JP':'ja', 'zh_Hans':'zh_Hans', 'zh_Hant':'zh_Hant' },
+
+        _nameToType(name) {
+            return 'COLOR_SIB_' + name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        },
+
+        renderAddColor() {
+            const langs = GameDatabase._LANGS;
+            const grid = document.getElementById('devColorTranslations');
+            if (!grid || grid.dataset.built) return;
+            grid.dataset.built = '1';
+
+            grid.innerHTML = langs.map(lang => `
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:3px;">${this._LANG_LABELS[lang]}</label>
+                    <input type="text" id="devColorTrans_${lang}" class="modal-text-input" style="width:100%; height:28px; box-sizing:border-box; font-size:12px;"${lang === 'en' ? ' placeholder="Fill in English name above"' : ''}>
+                </div>`).join('');
+
+            document.getElementById('devColorName').oninput = () => {
+                const v = document.getElementById('devColorName').value;
+                document.getElementById('devColorTypePreview').textContent = v ? this._nameToType(v) : 'COLOR_SIB_';
+                const enField = document.getElementById('devColorTrans_en');
+                if (enField) enField.value = v;
+            };
+
+            const picker = document.getElementById('devColorPicker');
+            const hexIn  = document.getElementById('devColorHex');
+            picker.oninput = () => { hexIn.value = picker.value.toUpperCase(); };
+            hexIn.oninput  = () => { if (/^#[0-9a-fA-F]{6}$/.test(hexIn.value)) picker.value = hexIn.value; };
+
+            document.getElementById('btnDevColorTranslate').onclick = () => this._translateColor();
+            document.getElementById('btnDevColorAdd').onclick       = () => this._addColor();
+        },
+
+        async _translateColor() {
+            const name = document.getElementById('devColorName').value.trim();
+            if (!name) { UI.notify('Enter a color name first.', 'error'); return; }
+            const btn = document.getElementById('btnDevColorTranslate');
+            const orig = btn.innerHTML;
+            btn.disabled = true; btn.textContent = 'Translating…';
+            try {
+                const r = await fetch('https://sib-color-configurator-translation.nathankearns.workers.dev/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description: '' })
+                });
+                if (!r.ok) throw new Error(`Worker returned ${r.status}`);
+                const data = await r.json();
+                Object.entries(data).forEach(([wKey, obj]) => {
+                    const lang = this._WORKER_LOCALE_MAP[wKey];
+                    const field = lang && document.getElementById(`devColorTrans_${lang}`);
+                    if (field && obj.name) field.value = obj.name;
+                });
+                UI.notify('Translations fetched.', 'success');
+            } catch (e) {
+                UI.notify('Translation failed: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false; btn.innerHTML = orig;
+            }
+        },
+
+        _addColor() {
+            const name = document.getElementById('devColorName').value.trim();
+            const hex  = document.getElementById('devColorHex').value.trim().toUpperCase();
+            if (!name) { UI.notify('Enter a color name.', 'error'); return; }
+            if (!/^#[0-9A-F]{6}$/.test(hex)) { UI.notify('Enter a valid hex (#RRGGBB).', 'error'); return; }
+
+            const type = this._nameToType(name);
+            if (Config.SIBR3_COLORS.some(c => c.type === type)) { UI.notify(`${type} already exists.`, 'error'); return; }
+
+            Config.SIBR3_COLORS.push({ type, hex });
+            State.colorDefs[type] = hex;
+
+            GameDatabase._LANGS.forEach(lang => {
+                const v = (document.getElementById(`devColorTrans_${lang}`) || {}).value?.trim();
+                if (!v) return;
+                if (!Locale.STRINGS[lang]) Locale.STRINGS[lang] = {};
+                if (!Locale.STRINGS[lang].colorNames) Locale.STRINGS[lang].colorNames = {};
+                Locale.STRINGS[lang].colorNames[type] = v;
+            });
+
+            persist();
+            Render.colorsTable();
+            UI.notify(`${type} added.`, 'success');
+
+            // Reset form
+            ['devColorName','devColorHex'].forEach(id => { document.getElementById(id).value = ''; });
+            document.getElementById('devColorPicker').value = '#808080';
+            document.getElementById('devColorTypePreview').textContent = 'COLOR_SIB_';
+            GameDatabase._LANGS.forEach(lang => {
+                const f = document.getElementById(`devColorTrans_${lang}`);
+                if (f) f.value = '';
+            });
         },
 
         get pat() { return this._pat; }

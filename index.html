@@ -117,7 +117,43 @@
             <span style="flex:1"></span>
             <button class="btn btn-danger" id="btnDevLogout">Log Out</button>
         </div>
-        <div id="dev-panel-addColor" class="dev-panel active"></div>
+        <div id="dev-panel-addColor" class="dev-panel active">
+            <div style="max-width:720px;">
+                <fieldset class="fieldset" style="margin-bottom:16px;">
+                    <legend>New SiBr3 Color</legend>
+                    <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+                        <div style="flex:2; min-width:180px;">
+                            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">English Name</label>
+                            <input type="text" id="devColorName" class="modal-text-input" placeholder="e.g. Prussian Blue MD" style="width:100%; height:32px; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">Hex</label>
+                            <div style="display:flex; gap:4px;">
+                                <input type="color" id="devColorPicker" value="#808080" style="width:32px; height:32px; cursor:pointer; border:1px solid var(--border); padding:0; box-shadow:inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);">
+                                <input type="text" id="devColorHex" class="modal-text-input" placeholder="#RRGGBB" maxlength="7" style="width:90px; height:32px;">
+                            </div>
+                        </div>
+                        <div style="flex:2; min-width:180px;">
+                            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">Generated Type</label>
+                            <div id="devColorTypePreview" style="height:32px; line-height:32px; font-size:11px; font-family:monospace; color:var(--text-muted); padding:0 6px; background:var(--bg-surface); border:1px solid var(--border); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-shadow:inset 1px 1px 0 var(--bevel-sh-int), inset -1px -1px 0 var(--bevel-hl-int);">COLOR_SIB_</div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fieldset" style="margin-bottom:16px;">
+                    <legend>Translations</legend>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:12px; color:var(--text-muted);">Auto-translate or edit each language name manually.</span>
+                        <button class="btn btn-secondary" id="btnDevColorTranslate">&#128221; Auto-Translate</button>
+                    </div>
+                    <div id="devColorTranslations" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+                </fieldset>
+
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="btn btn-primary" id="btnDevColorAdd">+ Add Color</button>
+                </div>
+            </div>
+        </div>
         <div id="dev-panel-addLeader" class="dev-panel"></div>
         <div id="dev-panel-commit" class="dev-panel"></div>
     </div>
